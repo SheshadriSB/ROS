@@ -1,0 +1,16 @@
+scroll_approach_controller:
+  ros__parameters:
+    forward_distance: 1.0
+    lateral_distance: 1.0
+    distance_threshold: 0.08
+    max_linear_vel: 0.4
+
+    # PID gains for x (forward)
+    kp_x: 1.0
+    ki_x: 0.0
+    kd_x: 0.1
+
+    # PID gains for y (lateral)
+    kp_y: 0.8
+    ki_y: 0.0
+    kd_y: 0.08
