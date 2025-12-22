@@ -1,16 +1,23 @@
 scroll_approach_controller:
   ros__parameters:
-    forward_distance: 1.0
-    lateral_distance: 1.0
-    distance_threshold: 0.08
-    max_linear_vel: 0.4
+    # Distances (in meters)
+    forward_distance: 1.0         # How far forward to move in the second phase
+    lateral_distance: 1.0         # How far left/right to strafe in the first phase
 
-    # PID gains for x (forward)
-    kp_x: 1.0
-    ki_x: 0.0
-    kd_x: 0.1
+    # Tolerances (in meters)
+    distance_threshold: 0.08       # Stop when total remaining distance < this
+    lateral_tolerance: 0.12        # Switch to forward phase when |y error| < this
 
-    # PID gains for y (lateral)
-    kp_y: 0.8
-    ki_y: 0.0
-    kd_y: 0.08
+    # Velocity limits (in m/s)
+    max_forward_vel: 0.45          # Max speed during forward phase
+    max_lateral_vel: 0.35          # Max speed during lateral phase (often slightly lower for precision)
+
+    # PID gains for forward (x) control
+    kp_x: 1.3
+    ki_x: 0.05
+    kd_x: 0.15
+
+    # PID gains for lateral (y) control
+    kp_y: 1.0
+    ki_y: 0.02
+    kd_y: 0.10
