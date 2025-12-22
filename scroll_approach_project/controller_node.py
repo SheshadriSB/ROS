@@ -22,7 +22,7 @@ class SimplePID:
     def compute(self, error):
         current_time = time.time()
         if self.prev_time is None:
-            dt = 0.02  # fallback for first call
+            dt = 0.02
         else:
             dt = current_time - self.prev_time
         if dt <= 0:
@@ -88,6 +88,7 @@ class ScrollApproachController(Node):
         self.target_y = 0.0
         self.target_set = False
         self.moving = False
+        self.phase = 0  # 0 = lateral phase, 1 = forward phase
         self.current_x = 0.0
         self.current_y = 0.0
 
@@ -104,7 +105,7 @@ class ScrollApproachController(Node):
         # Status timer
         self.create_timer(1.0, self.log_status)
 
-        self.get_logger().info('Scroll Approach Controller fully initialized.')
+        self.get_logger().info('Scroll Approach Controller fully initialized (L-shape path).')
 
     def boolean_callback(self, msg: Bool):
         if self.moving:
@@ -117,13 +118,15 @@ class ScrollApproachController(Node):
 
         self.target_set = True
         self.moving = True
+        self.phase = 0  # Always start with lateral movement
 
-        # Reset PIDs for new target
+        # Reset PIDs
         self.pid_x.reset()
         self.pid_y.reset()
 
         self.get_logger().info(f'New target accepted: {side}')
         self.get_logger().info(f'  → x = {self.target_x:.2f} m, y = {self.target_y:+.2f} m')
+        self.get_logger().info('Starting L-shape path: lateral first, then forward')
 
     def odom_callback(self, msg: Odometry):
         self.current_x = msg.pose.pose.position.x
@@ -139,16 +142,30 @@ class ScrollApproachController(Node):
         distance = math.sqrt(error_x**2 + error_y**2)
 
         if distance < self.distance_threshold:
-            self.get_logger().info(f'Target reached! Distance: {distance:.3f} m')
+            self.get_logger().info(f'Target reached! Final distance: {distance:.3f} m')
             self.publish_zero_vel()
             self.target_set = False
             self.moving = False
+            self.phase = 0
             self.pid_x.reset()
             self.pid_y.reset()
             return
 
-        vx = self.pid_x.compute(error_x)
-        vy = self.pid_y.compute(error_y)
+        if self.phase == 0:  # Lateral phase - pure y movement
+            vx = 0.0
+            vy = self.pid_y.compute(error_y)
+
+            # Switch to forward phase when y is well-aligned
+            # Use a larger tolerance than final threshold
+            lateral_tolerance = 0.2  # meters - adjust if needed
+            if abs(error_y) < lateral_tolerance:
+                self.phase = 1
+                self.pid_x.reset()
+                self.get_logger().info('Lateral phase complete — switching to forward motion')
+
+        else:  # Forward phase - pure x movement
+            vx = self.pid_x.compute(error_x)
+            vy = 0.0
 
         twist = Twist()
         twist.linear.x = vx
@@ -163,11 +180,13 @@ class ScrollApproachController(Node):
         self.cmd_vel_pub.publish(twist)
 
     def log_status(self):
+        phase_str = "Lateral" if self.phase == 0 else "Forward"
         if self.target_set:
             error_x = self.target_x - self.current_x
             error_y = self.target_y - self.current_y
             distance = math.sqrt(error_x**2 + error_y**2)
             self.get_logger().info(
+                f'Phase: {phase_str} | '
                 f'Pos: ({self.current_x:+.3f}, {self.current_y:+.3f}) | '
                 f'Target: ({self.target_x:+.3f}, {self.target_y:+.3f}) | '
                 f'Dist: {distance:.3f} m'
