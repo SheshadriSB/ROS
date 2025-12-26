@@ -1,21 +1,19 @@
 #!/usr/bin/env python3
-
 import rclpy
 from rclpy.node import Node
-from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 import struct
 import serial
+import time
 
 START_BYTE = 0xA5
-RX_FRAME_SIZE = 10   # start + 8 (2 floats) + checksum
-TX_FRAME_SIZE = 14   # start + 12 (3 floats) + checksum
+RX_FRAME_SIZE = 10  # start + 8 (2 floats) + checksum
 
-class SerialBridge(Node):
+class DeadwheelBridge(Node):
     def __init__(self):
-        super().__init__('serial_bridge')
+        super().__init__('deadwheel_bridge')
 
-        self.declare_parameter('port', '/dev/ttyACM0')
+        self.declare_parameter('port', '/dev/null')  # ← Change to your encoder MCU port
         self.declare_parameter('baudrate', 115200)
 
         port = self.get_parameter('port').value
@@ -23,41 +21,23 @@ class SerialBridge(Node):
 
         try:
             self.ser = serial.Serial(port, baud, timeout=0.05)
-            self.get_logger().info(f"Serial port {port} opened at {baud} baud")
+            self.get_logger().info(f"Deadwheel serial port {port} opened at {baud} baud")
         except Exception as e:
-            self.get_logger().fatal(f"Failed to open serial port: {e}")
+            self.get_logger().fatal(f"Failed to open deadwheel serial port: {e}")
             raise
 
-        self.create_subscription(Twist, '/cmd_vel', self.cmd_vel_callback, 10)
         self.odom_pub = self.create_publisher(Odometry, '/odom', 10)
         self.create_timer(0.01, self.read_serial)  # 100 Hz
 
         # Integration state
         self.x = 0.0
         self.y = 0.0
-        self.last_time = self.get_clock().now().nanoseconds / 1e9
+        self.last_time = time.time()  # using time.time() for simplicity
 
         # RX buffer
         self.rx_buffer = bytearray()
 
-        self.get_logger().info('Serial bridge ready — TX: 3 floats (vx,vy,omega), RX: 2 floats (omega_y, omega_x)')
-
-    def cmd_vel_callback(self, msg: Twist):
-        vx = float(msg.linear.x)
-        vy = float(msg.linear.y)
-        omega = float(msg.angular.z)
-
-        payload = struct.pack('<fff', vx, vy, omega)
-        checksum = START_BYTE
-        for b in payload:
-            checksum ^= b & 0xFF
-        frame = bytes([START_BYTE]) + payload + bytes([checksum & 0xFF])
-
-        try:
-            self.ser.write(frame)
-
-        except Exception as e:
-            self.get_logger().error(f"Serial write failed: {e}")
+        self.get_logger().info('Deadwheel bridge ready — RX only: omega_y, omega_x → odom')
 
     def read_serial(self):
         try:
@@ -83,7 +63,7 @@ class SerialBridge(Node):
 
                 omega_y, omega_x = struct.unpack('<ff', payload)
 
-                current_time = self.get_clock().now().nanoseconds / 1e9
+                current_time = time.time()
                 dt = current_time - self.last_time
                 if dt > 0.1 or dt <= 0:
                     dt = 0.01
@@ -99,29 +79,28 @@ class SerialBridge(Node):
 
                 odom.pose.pose.position.x = self.x
                 odom.pose.pose.position.y = self.y
-                odom.pose.pose.orientation.w = 1.0  # yaw = 0
+                odom.pose.pose.orientation.w = 1.0  # yaw = 0 (no angular feedback)
 
                 odom.twist.twist.linear.x = omega_x
                 odom.twist.twist.linear.y = omega_y
-
 
                 self.odom_pub.publish(odom)
 
                 del self.rx_buffer[:RX_FRAME_SIZE]
 
         except Exception as e:
-            self.get_logger().error(f"Serial read error: {e}")
+            self.get_logger().error(f"Deadwheel serial read error: {e}")
 
     def destroy_node(self):
         if hasattr(self, 'ser') and self.ser.is_open:
             self.ser.close()
-            self.get_logger().info("Serial port closed")
+            self.get_logger().info("Deadwheel serial port closed")
         super().destroy_node()
 
 
 def main(args=None):
     rclpy.init(args=args)
-    node = SerialBridge()
+    node = DeadwheelBridge()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()

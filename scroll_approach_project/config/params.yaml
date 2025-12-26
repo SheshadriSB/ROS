@@ -1,0 +1,25 @@
+# Shared or node-specific params
+deadwheel_bridge:
+  ros__parameters:
+    port: "/tmp/vtty_motor"
+    #baudrate: 115200
+
+motor_bridge:
+  ros__parameters:
+    port: "/tmp/vtty_deadwheel"
+    #baudrate: 115200
+
+scroll_approach_controller:
+  ros__parameters:
+    forward_distance: 1.0
+    lateral_distance: 1.0
+    distance_threshold: 0.08
+    lateral_tolerance: 0.15
+    max_forward_vel: 0.4
+    max_lateral_vel: 0.4
+    kp_x: 1.0
+    ki_x: 0.0
+    kd_x: 0.1
+    kp_y: 0.8
+    ki_y: 0.0
+    kd_y: 0.08
