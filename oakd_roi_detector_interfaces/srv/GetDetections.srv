@@ -1,0 +1,7 @@
+bool reset          # Optional: reset the state machine
+string trigger_roi  # Optional: force start on "roi1" or "roi2"
+---
+string roi1_class
+string roi2_class
+bool success
+string status

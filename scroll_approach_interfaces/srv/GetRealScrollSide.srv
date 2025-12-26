@@ -1,8 +1,0 @@
-# Request: empty (we don't need to send anything extra)
----
-# Response
-bool success
-bool is_real_on_right     # true  = real scroll is on the RIGHT side
-                          # false = real scroll is on the LEFT side
-float32 confidence        # 0.0 to 1.0 (optional but recommended)
-string message            # optional: error info or debug text
