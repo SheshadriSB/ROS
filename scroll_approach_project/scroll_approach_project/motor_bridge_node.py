@@ -6,6 +6,8 @@ import struct
 import serial
 import time
 
+
+#socat -d -d PTY,link=/tmp/vtty_motor,raw,echo=0 PTY,link=/tmp/vtty_deadwheel,raw,echo=0
 START_BYTE = 0xA5
 RX_FRAME_SIZE = 10  # start + 8 (2 floats) + checksum
 

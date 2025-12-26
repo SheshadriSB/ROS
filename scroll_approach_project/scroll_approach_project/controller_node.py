@@ -7,7 +7,7 @@ from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from std_msgs.msg import Empty  # optional trigger
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
-from scroll_approach_interfaces.srv import GetRealScrollSide
+from oakd_roi_detector_interfaces.srv import GetDetections
 
 import math
 import time
@@ -104,8 +104,8 @@ class ScrollApproachController(Node):
         # Service client
         self.client_cb_group = MutuallyExclusiveCallbackGroup()
         self.scroll_client = self.create_client(
-            GetRealScrollSide,
-            '/get_real_scroll_side',
+            GetDetections,
+            '/get_detections',
             callback_group=self.client_cb_group
         )
 
@@ -131,7 +131,7 @@ class ScrollApproachController(Node):
 
         self.get_logger().info("Requesting real scroll side from camera...")
 
-        request = GetRealScrollSide.Request()
+        request = GetDetections.Request()
         future = self.scroll_client.call_async(request)
 
         # Use async callback to avoid blocking the main thread
@@ -140,14 +140,35 @@ class ScrollApproachController(Node):
     def service_response_callback(self, future):
         try:
             response = future.result()
-            if response.success:
-                side = "RIGHT" if response.is_real_on_right else "LEFT"
-                self.get_logger().info(
-                    f"Received: real scroll is on {side} (confidence: {response.confidence:.2f})"
-                )
-                self.set_new_target(response.is_real_on_right)
+
+            if not response.success:
+                self.get_logger().warn(f"Detection failed: {response.status}")
+                return
+
+            # Log raw values for debugging (remove later if not needed)
+            self.get_logger().debug(f"roi1: '{response.roi1_class}' | roi2: '{response.roi2_class}'")
+
+            # Adjust this condition based on your actual class names!
+            REAL_INDICATORS = ["real_scroll", "real", "scroll"]   # ← PUT REAL VALUES HERE
+
+            left_real = any(ind in response.roi1_class.lower() for ind in REAL_INDICATORS)
+            right_real = any(ind in response.roi2_class.lower() for ind in REAL_INDICATORS)
+
+            if right_real and not left_real:
+                is_real_on_right = True
+            elif left_real and not right_real:
+                is_real_on_right = False
             else:
-                self.get_logger().warn(f"Detection failed: {response.message or 'unknown reason'}")
+                self.get_logger().warn(
+                    f"Ambiguous detection: left='{response.roi1_class}', right='{response.roi2_class}'"
+                )
+                return
+
+            side = "RIGHT" if is_real_on_right else "LEFT"
+            self.get_logger().info(f"Real scroll on {side} (roi1: {response.roi1_class}, roi2: {response.roi2_class})")
+
+            self.set_new_target(is_real_on_right)
+
         except Exception as e:
             self.get_logger().error(f"Service call failed: {str(e)}")
 
