@@ -53,7 +53,7 @@ class ScrollApproachController(Node):
     def __init__(self):
         super().__init__('scroll_approach_controller')
 
-        #Paramters
+        #Paramtersss
         self.declare_parameter('forward_distance', 1.0)
         self.declare_parameter('lateral_distance', 1.0)
         self.declare_parameter('distance_threshold', 0.08)
