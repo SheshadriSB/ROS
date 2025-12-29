@@ -20,8 +20,8 @@ def generate_launch_description():
         # Deadwheel bridge (odometry simulation)
         Node(
             package=pkg_name,
-            executable='deadwheel_bridge_node',
-            name='deadwheel_bridge',
+            executable='sensor_bridge_node',
+            name='sensor_bridge',
             output='screen',
             parameters=[params_file],
         ),

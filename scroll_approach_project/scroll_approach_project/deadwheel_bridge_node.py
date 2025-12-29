@@ -9,9 +9,9 @@ import time
 START_BYTE = 0xA5
 RX_FRAME_SIZE = 10  # start + 8 (2 floats) + checksum
 
-class DeadwheelBridge(Node):
+class SensorBridge(Node):
     def __init__(self):
-        super().__init__('deadwheel_bridge')
+        super().__init__('sensor_bridge')
 
         self.declare_parameter('port', '/dev/null')  # ← Change to your encoder MCU port
         self.declare_parameter('baudrate', 115200)
@@ -100,7 +100,7 @@ class DeadwheelBridge(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = DeadwheelBridge()
+    node = SensorBridge()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()

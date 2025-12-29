@@ -1,12 +1,12 @@
 # Shared or node-specific params
-deadwheel_bridge:
+sensor_bridge:
   ros__parameters:
-    port: "/tmp/vtty_motor"
+    port: "/dev/serial/by-id/usb-Silicon_Labs_ESP_TTL_2_ESP_TTL_2-if00-port0"
     #baudrate: 115200
 
 motor_bridge:
   ros__parameters:
-    port: "/tmp/vtty_deadwheel"
+    port: "/dev/serial/by-id/usb-1a86_USB_Single_Serial_54A7002607-if00"
     #baudrate: 115200
 
 scroll_approach_controller:
