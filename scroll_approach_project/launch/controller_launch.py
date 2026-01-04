@@ -6,10 +6,10 @@ from launch_ros.substitutions import FindPackageShare
 from launch_ros.actions import Node
 
 def generate_launch_description():
-    # Package name
+  
     pkg_name = 'scroll_approach_project'
 
-    # Correct way to reference params.yaml in package share
+    
     params_file = PathJoinSubstitution([
         FindPackageShare(pkg_name),
         'config',
@@ -17,7 +17,7 @@ def generate_launch_description():
     ])
 
     return LaunchDescription([
-        # Deadwheel bridge (odometry simulation)
+        
         Node(
             package=pkg_name,
             executable='sensor_bridge_node',
@@ -26,7 +26,7 @@ def generate_launch_description():
             parameters=[params_file],
         ),
 
-        # Motor bridge (cmd_vel simulation)
+        
         Node(
             package=pkg_name,
             executable='motor_bridge_node',
@@ -35,7 +35,7 @@ def generate_launch_description():
             parameters=[params_file],
         ),
 
-        # Main controller
+        
         Node(
             package=pkg_name,
             executable='scroll_approach_controller',
