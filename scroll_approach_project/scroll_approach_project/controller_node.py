@@ -4,7 +4,7 @@ from rclpy.node import Node
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 
-from std_msgs.msg import Empty  # optional trigger
+from std_msgs.msg import Empty  
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from oakd_roi_detector_interfaces.srv import GetDetections
@@ -113,9 +113,9 @@ class ScrollApproachController(Node):
         self.create_timer(0.02, self.control_loop)  # 50 Hz
 
         # Status logging
-        self.create_timer(5.0, self.log_status)  # slower - 0.2 Hz
+        self.create_timer(5.0, self.log_status)  
 
-        # Optional: trigger detection when robot is ready (example)
+        
         self.create_timer(2.0, self.try_request_scroll_side)
 
         self.get_logger().info('Scroll Approach Controller started (using SERVICE client)')
@@ -134,7 +134,7 @@ class ScrollApproachController(Node):
         request = GetDetections.Request()
         future = self.scroll_client.call_async(request)
 
-        # Use async callback to avoid blocking the main thread
+        
         future.add_done_callback(self.service_response_callback)
 
     def service_response_callback(self, future):
@@ -145,11 +145,11 @@ class ScrollApproachController(Node):
                 self.get_logger().warn(f"Detection failed: {response.status}")
                 return
 
-            # Log raw values for debugging (remove later if not needed)
+            
             self.get_logger().debug(f"roi1: '{response.roi1_class}' | roi2: '{response.roi2_class}'")
 
-            # Adjust this condition based on your actual class names!
-            REAL_INDICATORS = ["real_scroll", "real", "scroll"]   # ← PUT REAL VALUES HERE
+            
+            REAL_INDICATORS = ["real_scroll", "real", "scroll"]   
 
             left_real = any(ind in response.roi1_class.lower() for ind in REAL_INDICATORS)
             right_real = any(ind in response.roi2_class.lower() for ind in REAL_INDICATORS)
