@@ -13,7 +13,7 @@ class SensorBridge(Node):
     def __init__(self):
         super().__init__('sensor_bridge')
 
-        self.declare_parameter('port', '/dev/null')  # ← Change to your encoder MCU port
+        self.declare_parameter('port', '/dev/null') 
         self.declare_parameter('baudrate', 115200)
 
         port = self.get_parameter('port').value
@@ -32,7 +32,7 @@ class SensorBridge(Node):
         # Integration state
         self.x = 0.0
         self.y = 0.0
-        self.last_time = time.time()  # using time.time() for simplicity
+        self.last_time = time.time()  
 
         # RX buffer
         self.rx_buffer = bytearray()
